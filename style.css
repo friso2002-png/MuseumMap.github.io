@@ -17,7 +17,7 @@ main {
   max-width: 1000px;
   margin: auto;
 }
-map {
+#map {
   height: 500px;
   background-color: #ddd;
   border-radius: 12px;
