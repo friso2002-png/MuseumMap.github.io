@@ -17,3 +17,9 @@ main {
   max-width: 1000px;
   margin: auto;
 }
+map {
+  height: 500px;
+  background-color: #ddd;
+  border-radius: 12px;
+  margin-top: 2rem;
+}
