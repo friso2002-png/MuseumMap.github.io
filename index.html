@@ -4,10 +4,29 @@
 <head>
   <meta charset="UTF-8">
   <title>Museummap</title>
+  <!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
   <link rel="stylesheet" href="style.css">
 <body>
   <h1>Welcome to MuseumMap</h1>
-  <p>Here ypu find every museum in the netherlands.</p>
+  <p>Here you find every museum in the netherlands.</p>
+  <div id="map" style="height: 500px;"></div>
+  <script>
+  // Kaart maken, centrum en zoomniveau
+  var map = L.map('map').setView([52.370216, 4.895168], 6);
+
+  // Basiskaart tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Voorbeeld marker
+  L.marker([52.370216, 4.895168]).addTo(map)
+      .bindPopup('Amsterdam')
+      .openPopup();
+</script>
 </body>
 </html>
