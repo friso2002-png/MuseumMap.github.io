@@ -5,26 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MuseumMap Nederland</title>
 
+    <!-- Eigen CSS -->
+    <link rel="stylesheet" href="style.css">
+
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-
-        h1 {
-            margin-top: 20px;
-        }
-
-        #map {
-            height: 600px;
-            width: 100%;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 
 <body>
@@ -32,7 +17,7 @@
     <h1>Welcome to MuseumMap</h1>
     <p>Hier vind je musea in Nederland.</p>
 
-    <div id="map"></div>
+    <div id="map" style="height: 600px; width: 100%;"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -46,7 +31,7 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Lijst met musea
+        // Musea
         const museums = [
             {
                 name: "Rijksmuseum",
