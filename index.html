@@ -16,48 +16,20 @@
   <div id="map" style="height: 500px;"></div>
   <script>
 <script>
-// Kaart maken
-var map = L.map('map').setView([52.370216, 4.895168], 7);
+<script>
+  // Kaart maken, centrum en zoomniveau
+  var map = L.map('map').setView([52.370216, 4.895168], 6);
 
-// Basiskaart
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-}).addTo(map);
+  // Basiskaart tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
 
-// Overpass API query
-var query = `
-[out:json][timeout:25];
-area["name"="Nederland"]->.searchArea;
-(
-  node["tourism"="museum"](area.searchArea);
-  way["tourism"="museum"](area.searchArea);
-  relation["tourism"="museum"](area.searchArea);
-);
-out center;
-`;
+  // Voorbeeld marker
+  L.marker([52.014703346845785, 4.356851578606827]).addTo(map)
+      .bindPopup('Gereedschap Museum mensert')
+      .openPopup();
 
-// Musea ophalen
-fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: query
-})
-.then(res => res.json())
-.then(data => {
-    data.elements.forEach(el => {
-
-        var lat = el.lat || el.center.lat;
-        var lon = el.lon || el.center.lon;
-
-        var name = el.tags && el.tags.name
-            ? el.tags.name
-            : "Museum";
-
-        L.marker([lat, lon])
-            .addTo(map)
-            .bindPopup(name);
-    });
-})
-.catch(err => console.error(err));
 
 </script>
 </body>
