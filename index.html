@@ -1,36 +1,91 @@
 <!DOCTYPE html>
 <html lang="nl">
-<div id="map"></div>
 <head>
-  <meta charset="UTF-8">
-  <title>Museummap</title>
-  <!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MuseumMap Nederland</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 20px;
+        }
+
+        #map {
+            height: 600px;
+            width: 100%;
+            margin-top: 20px;
+        }
+    </style>
 </head>
-  <link rel="stylesheet" href="style.css">
+
 <body>
-  <h1>Welcome to MuseumMap</h1>
-  <p>Here you find every museum in the netherlands.</p>
-  <div id="map" style="height: 500px;"></div>
-  <script>
-<script>
-<script>
-  // Kaart maken, centrum en zoomniveau
-  var map = L.map('map').setView([52.370216, 4.895168], 6);
 
-  // Basiskaart tiles
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-  }).addTo(map);
+    <h1>Welcome to MuseumMap</h1>
+    <p>Hier vind je musea in Nederland.</p>
 
-  // Voorbeeld marker
-  L.marker([52.014703346845785, 4.356851578606827]).addTo(map)
-      .bindPopup('Gereedschap Museum mensert')
-      .openPopup();
+    <div id="map"></div>
 
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-</script>
+    <script>
+        // Kaart maken
+        var map = L.map('map').setView([52.1326, 5.2913], 7);
+
+        // OpenStreetMap achtergrond
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Lijst met musea
+        const museums = [
+            {
+                name: "Rijksmuseum",
+                coords: [52.359998, 4.885219]
+            },
+            {
+                name: "Van Gogh Museum",
+                coords: [52.358416, 4.881076]
+            },
+            {
+                name: "Mauritshuis",
+                coords: [52.080985, 4.314691]
+            },
+            {
+                name: "NEMO Science Museum",
+                coords: [52.374153, 4.912426]
+            },
+            {
+                name: "Boijmans Van Beuningen",
+                coords: [51.914268, 4.471114]
+            },
+            {
+                name: "Openluchtmuseum",
+                coords: [52.005278, 5.899722]
+            },
+            {
+                name: "Fries Museum",
+                coords: [53.201233, 5.799913]
+            }
+        ];
+
+        // Markers toevoegen
+        museums.forEach(museum => {
+            L.marker(museum.coords)
+                .addTo(map)
+                .bindPopup(`<b>${museum.name}</b>`);
+        });
+
+    </script>
+
 </body>
 </html>
