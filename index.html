@@ -1,99 +1,233 @@
 <!DOCTYPE html>
 <html lang="nl">
-<header>
-    <h1>MuseumMap Netherlands</h1>
-    <p>Discover the countless museums scattered across the Netherlands.</p>
-</header>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>MuseumMap Netherlands</title>
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
-<style>
-    body {
-        background-color: yellow;
-        margin: 0;
-        font-family: Arial, sans-serif;
-    }
+    <style>
+        body {
+            background-color: yellow;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
 
-    header {
-        text-align: center;
-        padding: 20px;
-    }
+        header {
+            text-align: center;
+            padding: 20px;
+        }
 
-    header h1 {
-        margin-bottom: 10px;
-        font-size: 36px;
-    }
+        header h1 {
+            margin-bottom: 10px;
+            font-size: 36px;
+        }
 
-    header p {
-        font-size: 18px;
-        color: #333;
-    }
+        header p {
+            font-size: 18px;
+            color: #333;
+        }
 
-    #map {
-        height: 500px;
-        width: 800px;
-        margin: 40px auto;
-        border: 2px solid black;
-        border-radius: 10px;
-    }
-</style>
+        #controls {
+            width: 800px;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        #cityFilter {
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        #map {
+            height: 500px;
+            width: 800px;
+            margin: 40px auto;
+            border: 2px solid black;
+            border-radius: 10px;
+        }
+
+        /* Responsive voor mobiel */
+        @media (max-width: 850px) {
+
+            #map,
+            #controls {
+                width: 95%;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-    <!-- Kaart container -->
+    <header>
+        <h1>MuseumMap Netherlands</h1>
+        <p>Discover the countless museums scattered across the Netherlands.</p>
+    </header>
+
+    <!-- Filter -->
+    <div id="controls">
+        <label for="cityFilter">
+            Filter op stad/gemeente:
+        </label>
+
+        <select id="cityFilter">
+            <option value="all">Alle locaties</option>
+        </select>
+    </div>
+
+    <!-- Kaart -->
     <div id="map"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
     <script>
-    // Kaart maken
-    var map = L.map('map').setView([52.370216, 4.895168], 7);
 
-    // Basiskaart
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+        // Kaart initialiseren
+        var map = L.map('map').setView([52.370216, 4.895168], 7);
 
-    // Overpass API query
-    var query = `
-    [out:json][timeout:25];
-    area["name"="Nederland"]->.searchArea;
-    (
-      node["tourism"="museum"](area.searchArea);
-      way["tourism"="museum"](area.searchArea);
-      relation["tourism"="museum"](area.searchArea);
-    );
-    out center;
-    `;
+        // OpenStreetMap tiles
+        L.tileLayer(
+            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            {
+                attribution: '© OpenStreetMap contributors'
+            }
+        ).addTo(map);
 
-    // Data ophalen
-    fetch("https://overpass-api.de/api/interpreter", {
-        method: "POST",
-        body: query
-    })
-    .then(res => res.json())
-    .then(data => {
-        data.elements.forEach(el => {
-            var lat = el.lat || (el.center && el.center.lat);
-            var lon = el.lon || (el.center && el.center.lon);
+        // LayerGroup voor markers
+        var markersLayer = L.layerGroup().addTo(map);
 
-            if (!lat || !lon) return;
+        // Museums opslaan
+        var museums = [];
 
-            var name = el.tags && el.tags.name ? el.tags.name : "Museum";
+        // Dropdown selecteren
+        var cityFilter = document.getElementById("cityFilter");
 
-            L.marker([lat, lon])
-                .addTo(map)
-                .bindPopup(name);
+        // Overpass API query
+        var query = `
+        [out:json][timeout:25];
+        area["name"="Nederland"]->.searchArea;
+        (
+          node["tourism"="museum"](area.searchArea);
+          way["tourism"="museum"](area.searchArea);
+          relation["tourism"="museum"](area.searchArea);
+        );
+        out center tags;
+        `;
+
+        // Data ophalen
+        fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: query
+        })
+
+        .then(res => res.json())
+
+        .then(data => {
+
+            let cities = new Set();
+
+            data.elements.forEach(el => {
+
+                var lat =
+                    el.lat ||
+                    (el.center && el.center.lat);
+
+                var lon =
+                    el.lon ||
+                    (el.center && el.center.lon);
+
+                // Skip zonder coordinaten
+                if (!lat || !lon) return;
+
+                var tags = el.tags || {};
+
+                // Museumnaam
+                var name =
+                    tags.name || "Museum";
+
+                // Stad/gemeente bepalen
+                var city =
+                    tags["addr:city"] ||
+                    tags["addr:town"] ||
+                    tags["addr:village"] ||
+                    tags["is_in:city"] ||
+                    tags["addr:municipality"] ||
+                    "Onbekend";
+
+                // Museum opslaan
+                museums.push({
+                    name: name,
+                    city: city,
+                    lat: lat,
+                    lon: lon
+                });
+
+                // Stad toevoegen aan dropdown
+                cities.add(city);
+            });
+
+            // Dropdown vullen
+            [...cities]
+                .sort()
+                .forEach(city => {
+
+                    let option =
+                        document.createElement("option");
+
+                    option.value = city;
+                    option.textContent = city;
+
+                    cityFilter.appendChild(option);
+                });
+
+            // Eerst alles tonen
+            showMuseums("all");
+        })
+
+        .catch(err => {
+            console.error("Fout bij ophalen data:", err);
         });
-    })
-    .catch(err => console.error(err));
+
+        // Museums tonen
+        function showMuseums(selectedCity) {
+
+            // Oude markers verwijderen
+            markersLayer.clearLayers();
+
+            museums.forEach(museum => {
+
+                // Filter toepassen
+                if (
+                    selectedCity === "all" ||
+                    museum.city === selectedCity
+                ) {
+
+                    L.marker([museum.lat, museum.lon])
+
+                        .addTo(markersLayer)
+
+                        .bindPopup(`
+                            <b>${museum.name}</b><br>
+                            ${museum.city}
+                        `);
+                }
+            });
+        }
+
+        // Event listener dropdown
+        cityFilter.addEventListener(
+            "change",
+            function () {
+                showMuseums(this.value);
+            }
+        );
+
     </script>
 
 </body>
