@@ -5,53 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MuseumMap Nederland</title>
 
-    <!-- Eigen CSS -->
-    <link rel="stylesheet" href="style.css">
-
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+    </style>
 </head>
 
-<script>
-// Kaart maken
-var map = L.map('map').setView([52.370216, 4.895168], 7);
+<body>
 
-// Basiskaart
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
-}).addTo(map);
+    <!-- Kaart container -->
+    <div id="map"></div>
 
-// Overpass API query (alle musea in Nederland)
-var query = `
-[out:json][timeout:25];
-area["name"="Nederland"]->.searchArea;
-(
-  node["tourism"="museum"](area.searchArea);
-  way["tourism"="museum"](area.searchArea);
-  relation["tourism"="museum"](area.searchArea);
-);
-out center;
-`;
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-// Data ophalen
-fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    body: query
-})
-.then(res => res.json())
-.then(data => {
-    data.elements.forEach(el => {
-        var lat = el.lat || el.center.lat;
-        var lon = el.lon || el.center.lon;
-        var name = el.tags && el.tags.name ? el.tags.name : "Museum";
+    <script>
+    // Kaart maken
+    var map = L.map('map').setView([52.370216, 4.895168], 7);
 
-        L.marker([lat, lon])
-            .addTo(map)
-            .bindPopup(name);
-    });
-})
-.catch(err => console.error(err));
-</script>
+    // Basiskaart
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Overpass API query
+    var query = `
+    [out:json][timeout:25];
+    area["name"="Nederland"]->.searchArea;
+    (
+      node["tourism"="museum"](area.searchArea);
+      way["tourism"="museum"](area.searchArea);
+      relation["tourism"="museum"](area.searchArea);
+    );
+    out center;
+    `;
+
+    // Data ophalen
+    fetch("https://overpass-api.de/api/interpreter", {
+        method: "POST",
+        body: query
+    })
+    .then(res => res.json())
+    .then(data => {
+        data.elements.forEach(el => {
+            var lat = el.lat || (el.center && el.center.lat);
+            var lon = el.lon || (el.center && el.center.lon);
+
+            if (!lat || !lon) return;
+
+            var name = el.tags && el.tags.name ? el.tags.name : "Museum";
+
+            L.marker([lat, lon])
+                .addTo(map)
+                .bindPopup(name);
+        });
+    })
+    .catch(err => console.error(err));
+    </script>
 
 </body>
 </html>
