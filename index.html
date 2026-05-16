@@ -12,65 +12,46 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 
-<body>
+<script>
+// Kaart maken
+var map = L.map('map').setView([52.370216, 4.895168], 7);
 
-    <h1>Welcome to MuseumMap</h1>
-    <p>Hier vind je musea in Nederland.</p>
+// Basiskaart
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
 
-    <div id="map" style="height: 600px; width: 50%; margin: 0 auto;"></div>
+// Overpass API query (alle musea in Nederland)
+var query = `
+[out:json][timeout:25];
+area["name"="Nederland"]->.searchArea;
+(
+  node["tourism"="museum"](area.searchArea);
+  way["tourism"="museum"](area.searchArea);
+  relation["tourism"="museum"](area.searchArea);
+);
+out center;
+`;
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+// Data ophalen
+fetch("https://overpass-api.de/api/interpreter", {
+    method: "POST",
+    body: query
+})
+.then(res => res.json())
+.then(data => {
+    data.elements.forEach(el => {
+        var lat = el.lat || el.center.lat;
+        var lon = el.lon || el.center.lon;
+        var name = el.tags && el.tags.name ? el.tags.name : "Museum";
 
-    <script>
-        // Kaart maken
-        var map = L.map('map').setView([52.1326, 5.2913], 7);
-
-        // OpenStreetMap achtergrond
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        // Musea
-        const museums = [
-            {
-                name: "Rijksmuseum",
-                coords: [52.359998, 4.885219]
-            },
-            {
-                name: "Van Gogh Museum",
-                coords: [52.358416, 4.881076]
-            },
-            {
-                name: "Mauritshuis",
-                coords: [52.080985, 4.314691]
-            },
-            {
-                name: "NEMO Science Museum",
-                coords: [52.374153, 4.912426]
-            },
-            {
-                name: "Boijmans Van Beuningen",
-                coords: [51.914268, 4.471114]
-            },
-            {
-                name: "Openluchtmuseum",
-                coords: [52.005278, 5.899722]
-            },
-            {
-                name: "Fries Museum",
-                coords: [53.201233, 5.799913]
-            }
-        ];
-
-        // Markers toevoegen
-        museums.forEach(museum => {
-            L.marker(museum.coords)
-                .addTo(map)
-                .bindPopup(`<b>${museum.name}</b>`);
-        });
-
-    </script>
+        L.marker([lat, lon])
+            .addTo(map)
+            .bindPopup(name);
+    });
+})
+.catch(err => console.error(err));
+</script>
 
 </body>
 </html>
