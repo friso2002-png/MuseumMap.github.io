@@ -110,7 +110,7 @@
 
         // Dropdown selecteren
         var cityFilter = document.getElementById("cityFilter");
-
+        var typeFilter = document.getElementById("typeFilter");
         // Overpass API query
         var query = `
         [out:json][timeout:25];
@@ -163,16 +163,23 @@
                     tags["addr:municipality"] ||
                     "Onbekend";
 
+                // Museumtype bepalen
+                var type =
+                    tags.museum ||
+                    "unknown";
+                
                 // Museum opslaan
                 museums.push({
                     name: name,
                     city: city,
+                    type: type,
                     lat: lat,
                     lon: lon
                 });
 
                 // Stad toevoegen aan dropdown
                 cities.add(city);
+                types.add(type);
             });
 
             // Dropdown vullen
@@ -188,9 +195,24 @@
 
                     cityFilter.appendChild(option);
                 });
-
+            // Type dropdown vullen
+            [...types]
+                .sort()
+                .forEach(type => {
+            
+                    let option =
+                        document.createElement("option");
+            
+                    option.value = type;
+            
+                    // Mooie naam maken
+                    option.textContent =
+                        type.replaceAll("_", " ");
+            
+                    typeFilter.appendChild(option);
+                });
             // Eerst alles tonen
-            showMuseums("all");
+           showMuseums("all", "all");
         })
 
         .catch(err => {
@@ -198,7 +220,7 @@
         });
 
         // Museums tonen
-        function showMuseums(selectedCity) {
+        function showMuseums(selectedCity, selectedType) {
 
             // Oude markers verwijderen
             markersLayer.clearLayers();
@@ -206,30 +228,45 @@
             museums.forEach(museum => {
 
                 // Filter toepassen
-                if (
-                    selectedCity === "all" ||
-                    museum.city === selectedCity
-                ) {
+var cityMatch =
+    selectedCity === "all" ||
+    museum.city === selectedCity;
+
+var typeMatch =
+    selectedType === "all" ||
+    museum.type === selectedType;
+
+if (cityMatch && typeMatch) {
 
                     L.marker([museum.lat, museum.lon])
 
                         .addTo(markersLayer)
 
                         .bindPopup(`
-                            <b>${museum.name}</b><br>
-                            ${museum.city}
-                        `);
-                }
-            });
+                        <b>${museum.name}</b><br>
+                        ${museum.city}<br>
+                        Type: ${museum.type}
+                    `);
+
         }
 
-        // Event listener dropdown
-        cityFilter.addEventListener(
-            "change",
-            function () {
-                showMuseums(this.value);
-            }
-        );
+function applyFilters() {
+
+    showMuseums(
+        cityFilter.value,
+        typeFilter.value
+    );
+}
+
+cityFilter.addEventListener(
+    "change",
+    applyFilters
+);
+
+typeFilter.addEventListener(
+    "change",
+    applyFilters
+);
 
     </script>
 
