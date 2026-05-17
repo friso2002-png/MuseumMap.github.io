@@ -268,8 +268,14 @@
                         tags.name || "Museum";
 
                     // Museumtype bepalen
-                    let museumType = tags.museum || "other";
 
+                    let museumType = tags.museum || "other";
+                    
+                    // apis_mellifera tonen als nature
+                    if (museumType === "apis_mellifera") {
+                        museumType = "nature";
+                    }
+                    
                     // Alleen bekende types toestaan
                     if (!museumColors[museumType]) {
                         museumType = "other";
