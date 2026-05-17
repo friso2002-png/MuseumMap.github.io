@@ -59,7 +59,35 @@
             border-radius: 8px;
             z-index: 9999;
             font-size: 18px;
-             margin: 0 auto;
+            margin: 0 auto;
+        }
+
+        /* Animated dots */
+        .dots::after {
+            content: "";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0% {
+                content: "";
+            }
+
+            25% {
+                content: ".";
+            }
+
+            50% {
+                content: "..";
+            }
+
+            75% {
+                content: "...";
+            }
+
+            100% {
+                content: "";
+            }
         }
     </style>
 </head>
@@ -73,7 +101,7 @@
 
     <!-- Loading -->
     <div id="loading">
-        Loading museums...
+        Loading museums<span class="dots"></span>
     </div>
 
     <!-- Kaart -->
@@ -175,13 +203,17 @@
                     .addTo(markersLayer);
 
                 // Eerst loading tonen
-                marker.bindPopup("Loading...");
+                marker.bindPopup(`
+                    Loading<span class="dots"></span>
+                `);
 
                 // Wanneer popup opent
                 marker.on("click", function () {
 
                     // Tijdelijke loading popup
-                    marker.setPopupContent("Loading...");
+                    marker.setPopupContent(`
+                        Loading<span class="dots"></span>
+                    `);
 
                     // Simuleer trage data
                     setTimeout(() => {
