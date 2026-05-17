@@ -38,6 +38,11 @@
             text-align: center;
         }
 
+        #cityFilter {
+            padding: 8px;
+            font-size: 16px;
+        }
+
         #map {
             height: 500px;
             width: 800px;
@@ -64,6 +69,17 @@
         <p>Discover the countless museums scattered across the Netherlands.</p>
     </header>
 
+    <!-- Filter -->
+    <div id="controls">
+        <label for="cityFilter">
+            Filter op stad/gemeente:
+        </label>
+
+        <select id="cityFilter">
+            <option value="all">Alle locaties</option>
+        </select>
+    </div>
+
     <!-- Kaart -->
     <div id="map"></div>
 
@@ -88,6 +104,9 @@
 
         // Museums opslaan
         var museums = [];
+
+        // Dropdown selecteren
+        var cityFilter = document.getElementById("cityFilter");
 
         // Overpass API query
         var query = `
@@ -153,6 +172,19 @@
                 cities.add(city);
             });
 
+            // Dropdown vullen
+            [...cities]
+                .sort()
+                .forEach(city => {
+
+                    let option =
+                        document.createElement("option");
+
+                    option.value = city;
+                    option.textContent = city;
+
+                    cityFilter.appendChild(option);
+                });
 
             // Eerst alles tonen
             showMuseums("all");
@@ -170,6 +202,31 @@
 
             museums.forEach(museum => {
 
+                // Filter toepassen
+                if (
+                    selectedCity === "all" ||
+                    museum.city === selectedCity
+                ) {
+
+                    L.marker([museum.lat, museum.lon])
+
+                        .addTo(markersLayer)
+
+                        .bindPopup(`
+                            <b>${museum.name}</b><br>
+                            ${museum.city}
+                        `);
+                }
+            });
+        }
+
+        // Event listener dropdown
+        cityFilter.addEventListener(
+            "change",
+            function () {
+                showMuseums(this.value);
+            }
+        );
 
     </script>
 
