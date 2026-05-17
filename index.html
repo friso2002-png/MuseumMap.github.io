@@ -161,6 +161,7 @@
 
         // Museums tonen
 // Museums tonen
+// Museums tonen
 function showMuseums() {
 
     markersLayer.clearLayers();
@@ -170,33 +171,27 @@ function showMuseums() {
         var marker = L.marker([museum.lat, museum.lon])
             .addTo(markersLayer);
 
-        marker.bindPopup(`
-            <b>${museum.name}</b><br>
-            ${museum.city || "Unknown city"}
-        `);
-    });
-}
+        // Eerst loading tonen
+        marker.bindPopup("Loading...");
 
-// Eerst loading tonen
-marker.bindPopup("Loading...");
+        // Wanneer popup opent
+        marker.on("click", function () {
 
-// Wanneer popup opent
-marker.on("click", function () {
+            // Tijdelijke loading popup
+            marker.setPopupContent("Loading...");
 
-    // Tijdelijke loading popup
-    marker.setPopupContent("Loading...");
+            // Simuleer trage data
+            setTimeout(() => {
 
-    // Simuleer trage data (bijvoorbeeld API call)
-    setTimeout(() => {
+                marker.setPopupContent(`
+                    <b>${museum.name}</b><br>
+                    ${museum.city || "Unknown city"}
+                `);
 
-        marker.setPopupContent(`
-            <b>${museum.name}</b><br>
-            ${museum.city || "Unknown city"}
-        `);
+            }, 500);
 
-    }, 500); // halve seconde delay
-});
-            `);
+        });
+
     });
 }
 
