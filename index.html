@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -8,7 +9,7 @@
     <title>MuseumMap Netherlands</title>
 
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
     <style>
         body {
@@ -40,11 +41,50 @@
             border-radius: 10px;
         }
 
+        /* Filter balk */
+        #filterContainer {
+            width: 800px;
+            margin: 0 auto;
+        }
+
+        #filterToggle {
+            width: 100%;
+            padding: 14px;
+            font-size: 18px;
+            border: 2px solid black;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        #filterPanel {
+            display: none;
+            background: white;
+            border: 2px solid black;
+            border-top: none;
+            padding: 15px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .filterItem {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .filterItem label {
+            margin-left: 8px;
+        }
+
         /* Responsive voor mobiel */
         @media (max-width: 850px) {
             #map {
                 width: 95%;
                 height: 400px;
+            }
+
+            #filterContainer {
+                width: 95%;
             }
         }
 
@@ -89,51 +129,6 @@
                 content: "";
             }
         }
-
-        /* Filterbalk */
-        #filterContainer {
-            width: 800px;
-            margin: 20px auto 0 auto;
-            text-align: left;
-        }
-
-        #toggleFilters {
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            border: 2px solid black;
-            border-radius: 8px;
-            background: white;
-            cursor: pointer;
-        }
-
-        #filters {
-            margin-top: 10px;
-            background: white;
-            border: 2px solid black;
-            border-radius: 8px;
-            padding: 15px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        #filters.hidden {
-            display: none;
-        }
-
-        .filter-item {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-        }
-
-        @media (max-width: 850px) {
-            #filterContainer {
-                width: 95%;
-            }
-        }
     </style>
 </head>
 
@@ -144,20 +139,20 @@
         <p>Discover the countless museums scattered across the Netherlands.</p>
     </header>
 
-    <!-- Loading -->
-    <div id="loading">
-        Loading museums<span class="dots"></span>
-    </div>
-
-    <!-- Filterbalk -->
+    <!-- Filter balk -->
     <div id="filterContainer">
-
-        <button id="toggleFilters">
+        <button id="filterToggle">
             Museum keywords ▼
         </button>
 
-        <div id="filters" class="hidden"></div>
+        <div id="filterPanel">
+            <!-- Checkboxes worden automatisch toegevoegd -->
+        </div>
+    </div>
 
+    <!-- Loading -->
+    <div id="loading">
+        Loading museums<span class="dots"></span>
     </div>
 
     <!-- Kaart -->
@@ -184,6 +179,9 @@
 
         // Museums opslaan
         var museums = [];
+
+        // Actieve filters
+        let activeTypes = new Set();
 
         // Kleuren per museumtype
         const museumColors = {
@@ -228,73 +226,6 @@
             other: "gray"
         };
 
-        // Geselecteerde museumtypes
-        let selectedTypes =
-            new Set(Object.keys(museumColors));
-
-        // Filters genereren
-        function createFilters() {
-
-            const filtersDiv =
-                document.getElementById("filters");
-
-            filtersDiv.innerHTML = "";
-
-            Object.keys(museumColors).forEach(type => {
-
-                const wrapper =
-                    document.createElement("label");
-
-                wrapper.className = "filter-item";
-
-                const checkbox =
-                    document.createElement("input");
-
-                checkbox.type = "checkbox";
-                checkbox.checked = true;
-                checkbox.value = type;
-
-                checkbox.addEventListener("change", () => {
-
-                    if (checkbox.checked) {
-                        selectedTypes.add(type);
-                    } else {
-                        selectedTypes.delete(type);
-                    }
-
-                    showMuseums();
-                });
-
-                const colorDot =
-                    document.createElement("span");
-
-                colorDot.style.width = "12px";
-                colorDot.style.height = "12px";
-                colorDot.style.borderRadius = "50%";
-                colorDot.style.display = "inline-block";
-                colorDot.style.background =
-                    museumColors[type];
-
-                wrapper.appendChild(checkbox);
-                wrapper.appendChild(colorDot);
-                wrapper.appendChild(
-                    document.createTextNode(type)
-                );
-
-                filtersDiv.appendChild(wrapper);
-            });
-        }
-
-        // Uitklappen filtermenu
-        document
-            .getElementById("toggleFilters")
-            .addEventListener("click", () => {
-
-                document
-                    .getElementById("filters")
-                    .classList.toggle("hidden");
-            });
-
         // Overpass API query
         var query = `
         [out:json][timeout:25];
@@ -313,67 +244,120 @@
             body: query
         })
 
-        .then(res => res.json())
+            .then(res => res.json())
 
-        .then(data => {
+            .then(data => {
 
-            data.elements.forEach(el => {
+                data.elements.forEach(el => {
 
-                var lat =
-                    el.lat ||
-                    (el.center && el.center.lat);
+                    var lat =
+                        el.lat ||
+                        (el.center && el.center.lat);
 
-                var lon =
-                    el.lon ||
-                    (el.center && el.center.lon);
+                    var lon =
+                        el.lon ||
+                        (el.center && el.center.lon);
 
-                // Skip zonder coordinaten
-                if (!lat || !lon) return;
+                    // Skip zonder coordinaten
+                    if (!lat || !lon) return;
 
-                var tags = el.tags || {};
+                    var tags = el.tags || {};
 
-                // Museumnaam
-                var name =
-                    tags.name || "Museum";
+                    // Museumnaam
+                    var name =
+                        tags.name || "Museum";
 
-                // Museumtype bepalen
-                let museumType =
-                    tags.museum || "other";
+                    // Museumtype bepalen
+                    let museumType = tags.museum || "other";
 
-                // Alleen bekende types toestaan
-                if (!museumColors[museumType]) {
-                    museumType = "other";
-                }
+                    // Alleen bekende types toestaan
+                    if (!museumColors[museumType]) {
+                        museumType = "other";
+                    }
 
-                // Museum opslaan
-                museums.push({
-                    name: name,
-                    lat: lat,
-                    lon: lon,
-                    type: museumType,
-                    color: museumColors[museumType]
+                    // Museum opslaan
+                    museums.push({
+                        name: name,
+                        lat: lat,
+                        lon: lon,
+                        type: museumType,
+                        color: museumColors[museumType]
+                    });
                 });
+
+                // Filter panel maken
+                createFilterPanel();
+
+                // Eerst alles tonen
+                showMuseums();
+
+                // Loading verbergen
+                document.getElementById("loading").style.display = "none";
+            })
+
+            .catch(err => {
+                console.error("Fout bij ophalen data:", err);
+
+                document.getElementById("loading").innerText =
+                    "Fout bij laden van museums.";
             });
 
-            // Filters maken
-            createFilters();
+        // Filter panel maken
+        function createFilterPanel() {
 
-            // Museums tonen
-            showMuseums();
+            const filterPanel = document.getElementById("filterPanel");
 
-            // Loading verbergen
-            document.getElementById("loading").style.display = "none";
-        })
+            // Unieke museumtypes ophalen
+            const museumTypes = [...new Set(museums.map(m => m.type))].sort();
 
-        .catch(err => {
+            // Alles standaard aanvinken
+            museumTypes.forEach(type => activeTypes.add(type));
 
-            console.error(
-                "Fout bij ophalen data:",
-                err
-            );
+            museumTypes.forEach(type => {
 
-            document.getElementById("loading").innerText =
-                "Fout bij laden van museums.";
+                const wrapper = document.createElement("div");
+                wrapper.className = "filterItem";
+
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = true;
+                checkbox.id = `filter-${type}`;
+
+                checkbox.addEventListener("change", () => {
+
+                    if (checkbox.checked) {
+                        activeTypes.add(type);
+                    } else {
+                        activeTypes.delete(type);
+                    }
+
+                    showMuseums();
+                });
+
+                const label = document.createElement("label");
+                label.htmlFor = checkbox.id;
+                label.innerText = type;
+
+                wrapper.appendChild(checkbox);
+                wrapper.appendChild(label);
+
+                filterPanel.appendChild(wrapper);
+            });
+        }
+
+        // Uitklappen filter balk
+        const filterToggle = document.getElementById("filterToggle");
+        const filterPanel = document.getElementById("filterPanel");
+
+        filterToggle.addEventListener("click", () => {
+
+            if (filterPanel.style.display === "block") {
+                filterPanel.style.display = "none";
+                filterToggle.innerHTML = "Museum keywords ▼";
+            } else {
+                filterPanel.style.display = "block";
+                filterToggle.innerHTML = "Museum keywords ▲";
+            }
         });
 
         // Museums tonen
@@ -383,8 +367,8 @@
 
             museums.forEach(museum => {
 
-                // Skip uitgeschakelde museumtypes
-                if (!selectedTypes.has(museum.type)) {
+                // Alleen tonen als checkbox actief is
+                if (!activeTypes.has(museum.type)) {
                     return;
                 }
 
@@ -438,4 +422,8 @@
     </script>
 
 </body>
+
 </html>
+```
+
+Gebaseerd op het originele bestand: fileciteturn0file0
