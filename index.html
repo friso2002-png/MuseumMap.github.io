@@ -148,13 +148,28 @@ function showMuseums() {
 
     museums.forEach(museum => {
 
-        L.marker([museum.lat, museum.lon])
+var marker = L.marker([museum.lat, museum.lon])
+    .addTo(markersLayer);
 
-            .addTo(markersLayer)
+// Eerst loading tonen
+marker.bindPopup("Loading...");
 
-            .bindPopup(`
-                <b>${museum.name}</b><br>
-                ${museum.city}
+// Wanneer popup opent
+marker.on("click", function () {
+
+    // Tijdelijke loading popup
+    marker.setPopupContent("Loading...");
+
+    // Simuleer trage data (bijvoorbeeld API call)
+    setTimeout(() => {
+
+        marker.setPopupContent(`
+            <b>${museum.name}</b><br>
+            ${museum.city || "Unknown city"}
+        `);
+
+    }, 500); // halve seconde delay
+});
             `);
     });
 }
