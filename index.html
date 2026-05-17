@@ -181,11 +181,10 @@ function showMuseums() {
             marker.setPopupContent("Loading...");
 
             // Simuleer trage data
-            setTimeout(() => {
 
-                marker.setPopupContent(`
-                    <b>${museum.name}</b><br>
-                    ${museum.city || "Unknown city"}
+                    marker.setPopupContent(`
+                        <b>${museum.name}</b>
+                    `);
                 `);
 
             }, 500);
