@@ -219,7 +219,14 @@
                     setTimeout(() => {
 
                         marker.setPopupContent(`
-                            <b>${museum.name}</b>
+                            <b>${museum.name}</b><br><br>
+                            
+                            <a 
+                                href="https://www.google.com/maps/search/?api=1&query=${museum.lat},${museum.lon}" 
+                                target="_blank"
+                            >
+                                Open in Google Maps
+                            </a>
                         `);
 
                     }, 500);
