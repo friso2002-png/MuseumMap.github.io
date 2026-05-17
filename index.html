@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 
     <style>
+
         body {
             background-color: yellow;
             margin: 0;
@@ -40,8 +41,9 @@
             border-radius: 10px;
         }
 
-        /* Responsive voor mobiel */
+        /* Responsive mobiel */
         @media (max-width: 850px) {
+
             #map {
                 width: 95%;
                 height: 400px;
@@ -59,7 +61,6 @@
             border-radius: 8px;
             z-index: 9999;
             font-size: 18px;
-            margin: 0 auto;
         }
 
         /* Animated dots */
@@ -69,6 +70,7 @@
         }
 
         @keyframes dots {
+
             0% {
                 content: "";
             }
@@ -89,6 +91,7 @@
                 content: "";
             }
         }
+
     </style>
 </head>
 
@@ -112,7 +115,10 @@
 
     <script>
 
+        // =========================
         // Kaart initialiseren
+        // =========================
+
         var map = L.map('map').setView([52.370216, 4.895168], 7);
 
         // OpenStreetMap tiles
@@ -129,7 +135,10 @@
         // Museums opslaan
         var museums = [];
 
+        // =========================
         // Kleuren per museumtype
+        // =========================
+
         const museumColors = {
 
             // Art
@@ -148,43 +157,111 @@
             apis_mellifera: "#f4d03f",
             nature: "#27ae60",
             technology: "#16a085",
-            agriculture: "#52be80",
-            palaeontology: "#7dcea0",
+            agriculture: "#7dcea0",
+            palaeontology: "#52be80",
             evolution: "#58d68d",
 
             // History
-            history: "#d35400",
-            living_history: "#e67e22",
-            military: "#922b21",
-            war: "#641e16",
-            archaeological: "#a04000",
+            history: "#a569bd",
+            living_history: "#8e44ad",
+            military: "#c0392b",
+            war: "#922b21",
+            archaeological: "#af7ac5",
 
             // Other
-            open_air: "#8e44ad",
-            local: "#9b59b6",
-            children: "#f39c12",
-            ethnography: "#af7ac5",
-            person: "#c0392b",
-            language: "#7f8c8d",
-            health: "#48c9b0",
+            open_air: "#f39c12",
+            local: "#d35400",
+            children: "#f5b041",
+            ethnography: "#7f8c8d",
+            person: "#566573",
+            language: "#48c9b0",
+            health: "#ec7063",
 
             // fallback
-            other: "#555555"
+            other: "#444444"
         };
 
+        // =========================
+        // Museumtypes uitlezen
+        // =========================
+
+        function getMuseumTypes(tags) {
+
+            let types = [];
+
+            if (tags.museum) {
+
+                let values = tags.museum
+                    .split(";")
+                    .map(v => v.trim());
+
+                values.forEach(v => {
+
+                    if (museumColors[v]) {
+                        types.push(v);
+                    }
+                });
+            }
+
+            // Geen bekend type
+            if (types.length === 0) {
+                types.push("other");
+            }
+
+            return types;
+        }
+
+        // =========================
+        // Gradient maken
+        // =========================
+
+        function createGradient(types) {
+
+            // Eén type
+            if (types.length === 1) {
+                return museumColors[types[0]];
+            }
+
+            // Meerdere types
+            const step = 100 / types.length;
+
+            let parts = [];
+
+            types.forEach((type, index) => {
+
+                const start = index * step;
+                const end = (index + 1) * step;
+
+                parts.push(
+                    `${museumColors[type]} ${start}% ${end}%`
+                );
+            });
+
+            return `linear-gradient(90deg, ${parts.join(", ")})`;
+        }
+
+        // =========================
         // Overpass API query
+        // =========================
+
         var query = `
         [out:json][timeout:25];
+
         area["name"="Nederland"]->.searchArea;
+
         (
           node["tourism"="museum"](area.searchArea);
           way["tourism"="museum"](area.searchArea);
           relation["tourism"="museum"](area.searchArea);
         );
+
         out center tags;
         `;
 
+        // =========================
         // Data ophalen
+        // =========================
+
         fetch("https://overpass-api.de/api/interpreter", {
             method: "POST",
             body: query
@@ -213,39 +290,21 @@
                 var name =
                     tags.name || "Museum";
 
-                // Museum types ophalen
-                let museumTypes = [];
-
-                // museum=* kan meerdere waarden bevatten
-                if (tags.museum) {
-
-                    museumTypes = tags.museum
-                        .split(";")
-                        .map(t => t.trim().toLowerCase());
-
-                }
-
-                // Alleen geldige keywords behouden
-                museumTypes = museumTypes.filter(type =>
-                    museumColors[type]
-                );
-
-                // Geen match = other
-                if (museumTypes.length === 0) {
-                    museumTypes = ["other"];
-                }
+                // Museumtypes bepalen
+                var types =
+                    getMuseumTypes(tags);
 
                 // Museum opslaan
                 museums.push({
                     name: name,
                     lat: lat,
                     lon: lon,
-                    types: museumTypes
+                    tags: tags,
+                    types: types
                 });
-
             });
 
-            // Eerst alles tonen
+            // Museums tonen
             showMuseums();
 
             // Loading verbergen
@@ -253,31 +312,39 @@
         })
 
         .catch(err => {
-            console.error("Fout bij ophalen data:", err);
+
+            console.error(
+                "Fout bij ophalen data:",
+                err
+            );
 
             document.getElementById("loading").innerText =
                 "Fout bij laden van museums.";
         });
 
+        // =========================
         // Museums tonen
+        // =========================
+
         function showMuseums() {
 
             markersLayer.clearLayers();
 
             museums.forEach(museum => {
 
-                var marker = L.marker([museum.lat, museum.lon])
+                var marker =
+                    L.marker([museum.lat, museum.lon])
                     .addTo(markersLayer);
 
-                // Eerst loading tonen
+                // Loading popup
                 marker.bindPopup(`
                     Loading<span class="dots"></span>
                 `);
 
-                // Wanneer popup opent
+                // Popup openen
                 marker.on("click", function () {
 
-                    // Tijdelijke loading popup
+                    // Tijdelijke loading
                     marker.setPopupContent(`
                         Loading<span class="dots"></span>
                     `);
@@ -285,55 +352,26 @@
                     // Simuleer trage data
                     setTimeout(() => {
 
-                        // Kleuren verzamelen
-                        let colors = museum.types.map(
-                            type => museumColors[type]
-                        );
-
                         // Gradient maken
-                        let gradient = "";
+                        const gradient =
+                            createGradient(museum.types);
 
-                        if (colors.length === 1) {
-
-                            gradient = colors[0];
-
-                        } else {
-
-                            const step = 100 / colors.length;
-
-                            gradient = `linear-gradient(
-                                90deg,
-                                ${
-                                    colors.map((color, index) => {
-
-                                        const start =
-                                            index * step;
-
-                                        const end =
-                                            (index + 1) * step;
-
-                                        return `
-                                            ${color}
-                                            ${start}%
-                                            ${end}%
-                                        `;
-
-                                    }).join(", ")
-                                }
-                            )`;
-                        }
-
+                        // Popup inhoud
                         marker.setPopupContent(`
 
                             <div style="
                                 background: ${gradient};
-                                padding: 12px;
+                                padding: 14px;
                                 border-radius: 10px;
                                 color: white;
-                                min-width: 220px;
+                                min-width: 240px;
                             ">
 
-                                <b>${museum.name}</b>
+                                <b style="
+                                    font-size: 18px;
+                                ">
+                                    ${museum.name}
+                                </b>
 
                                 <br><br>
 
@@ -342,12 +380,13 @@
 
                                 <br><br>
 
-                                <a 
-                                    href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
+                                <a
+                                    href="
+                                    https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}
+                                    "
                                     target="_blank"
                                     style="
                                         color: white;
-                                        font-weight: bold;
                                         text-decoration: underline;
                                     "
                                 >
@@ -355,6 +394,7 @@
                                 </a>
 
                             </div>
+
                         `);
 
                     }, 500);
