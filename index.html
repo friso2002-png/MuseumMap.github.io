@@ -129,6 +129,49 @@
         // Museums opslaan
         var museums = [];
 
+        // Kleuren per museumtype
+        const museumColors = {
+
+            // Art
+            art: "red",
+            gallery: "darkred",
+
+            // Transport
+            transport: "blue",
+            railway: "navy",
+            aviation: "skyblue",
+            aerospace: "deepskyblue",
+            maritime: "cadetblue",
+
+            // Science
+            science: "green",
+            apis_mellifera: "gold",
+            nature: "darkgreen",
+            technology: "limegreen",
+            agriculture: "olive",
+            palaeontology: "saddlebrown",
+            evolution: "forestgreen",
+
+            // History
+            history: "brown",
+            living_history: "peru",
+            military: "darkslategray",
+            war: "black",
+            archaeological: "chocolate",
+
+            // Other
+            open_air: "orange",
+            local: "purple",
+            children: "pink",
+            ethnography: "mediumvioletred",
+            person: "teal",
+            language: "indigo",
+            health: "crimson",
+
+            // Fallback
+            other: "gray"
+        };
+
         // Overpass API query
         var query = `
         [out:json][timeout:25];
@@ -170,9 +213,13 @@
                 var name =
                     tags.name || "Museum";
 
-                // Museumtype
-                var type =
-                    tags.museum || "default";
+                // Museumtype uitlezen
+                var type = tags.museum || "other";
+
+                // Als type niet bestaat -> other
+                if (!museumColors[type]) {
+                    type = "other";
+                }
 
                 // Museum opslaan
                 museums.push({
@@ -197,79 +244,6 @@
                 "Fout bij laden van museums.";
         });
 
-        // Kleur bepalen per museumtype
-        function getColor(type) {
-
-            switch(type) {
-
-                // Art
-                case "art":
-                case "gallery":
-                    return "purple";
-
-                // Transport
-                case "transport":
-                case "railway":
-                    return "black";
-
-                case "aviation":
-                case "aerospace":
-                    return "skyblue";
-
-                case "maritime":
-                    return "blue";
-
-                // Science
-                case "science":
-                    return "green";
-
-                case "technology":
-                    return "gray";
-
-                case "nature":
-                case "evolution":
-                case "palaeontology":
-                    return "darkgreen";
-
-                case "agriculture":
-                    return "olive";
-
-                // History
-                case "history":
-                case "living_history":
-                    return "brown";
-
-                case "military":
-                case "war":
-                    return "darkred";
-
-                case "archaeological":
-                    return "saddlebrown";
-
-                // Other
-                case "open_air":
-                    return "orange";
-
-                case "children":
-                    return "pink";
-
-                case "ethnography":
-                    return "gold";
-
-                case "person":
-                    return "red";
-
-                case "language":
-                    return "teal";
-
-                case "health":
-                    return "lightcoral";
-
-                default:
-                    return "cadetblue";
-            }
-        }
-
         // Museums tonen
         function showMuseums() {
 
@@ -277,29 +251,17 @@
 
             museums.forEach(museum => {
 
-                // Kleur bepalen
-                var color = getColor(museum.type);
-
-                // Custom marker
-                var icon = L.divIcon({
-                    className: "",
-                    html: `
-                        <div style="
-                            background:${color};
-                            width:18px;
-                            height:18px;
-                            border-radius:50%;
-                            border:2px solid white;
-                            box-shadow:0 0 4px rgba(0,0,0,0.5);
-                        "></div>
-                    `,
-                    iconSize: [18, 18]
-                });
-
-                // Marker maken
-                var marker = L.marker(
+                // Gekleurde marker
+                var marker = L.circleMarker(
                     [museum.lat, museum.lon],
-                    { icon: icon }
+                    {
+                        radius: 8,
+                        fillColor: museumColors[museum.type],
+                        color: "#000",
+                        weight: 1,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }
                 ).addTo(markersLayer);
 
                 // Eerst loading tonen
@@ -319,21 +281,15 @@
                     setTimeout(() => {
 
                         marker.setPopupContent(`
-                            <div style="
-                                border-left:8px solid ${color};
-                                padding-left:10px;
-                            ">
-                                <b>${museum.name}</b><br><br>
+                            <b>${museum.name}</b><br>
+                            Type: ${museum.type}<br><br>
 
-                                <b>Type:</b> ${museum.type}<br><br>
-
-                                <a 
-                                    href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
-                                    target="_blank"
-                                >
-                                    Open in Google Maps
-                                </a>
-                            </div>
+                            <a 
+                                href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
+                                target="_blank"
+                            >
+                                Open in Google Maps
+                            </a>
                         `);
 
                     }, 500);
