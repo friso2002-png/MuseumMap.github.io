@@ -32,17 +32,6 @@
             color: #333;
         }
 
-        #controls {
-            width: 800px;
-            margin: 20px auto;
-            text-align: center;
-        }
-
-        #cityFilter {
-            padding: 8px;
-            font-size: 16px;
-        }
-
         #map {
             height: 500px;
             width: 800px;
@@ -52,12 +41,8 @@
         }
 
         /* Responsive voor mobiel */
-        @media (max-width: 850px) {
-
-            #map,
-            #controls {
-                width: 95%;
-            }
+        @media (max-width: 850px) 
+            
         }
     </style>
 </head>
@@ -69,16 +54,6 @@
         <p>Discover the countless museums scattered across the Netherlands.</p>
     </header>
 
-    <!-- Filter -->
-    <div id="controls">
-        <label for="cityFilter">
-            Filter op stad/gemeente:
-        </label>
-
-        <select id="cityFilter">
-            <option value="all">Alle locaties</option>
-        </select>
-    </div>
 
     <!-- Kaart -->
     <div id="map"></div>
@@ -104,10 +79,6 @@
 
         // Museums opslaan
         var museums = [];
-
-        // Dropdown selecteren
-        var cityFilter = document.getElementById("cityFilter");
-
         // Overpass API query
         var query = `
         [out:json][timeout:25];
@@ -129,8 +100,6 @@
         .then(res => res.json())
 
         .then(data => {
-
-            let cities = new Set();
 
             data.elements.forEach(el => {
 
@@ -167,24 +136,8 @@
                     lat: lat,
                     lon: lon
                 });
-
-                // Stad toevoegen aan dropdown
-                cities.add(city);
             });
 
-            // Dropdown vullen
-            [...cities]
-                .sort()
-                .forEach(city => {
-
-                    let option =
-                        document.createElement("option");
-
-                    option.value = city;
-                    option.textContent = city;
-
-                    cityFilter.appendChild(option);
-                });
 
             // Eerst alles tonen
             showMuseums("all");
@@ -195,7 +148,22 @@
         });
 
         // Museums tonen
-        function showMuseums(selectedCity) {
+      function showMuseums() {
+
+    markersLayer.clearLayers();
+
+    museums.forEach(museum => {
+
+        L.marker([museum.lat, museum.lon])
+
+            .addTo(markersLayer)
+
+            .bindPopup(`
+                <b>${museum.name}</b><br>
+                ${museum.city}
+            `);
+    });
+}
 
             // Oude markers verwijderen
             markersLayer.clearLayers();
@@ -220,14 +188,7 @@
             });
         }
 
-        // Event listener dropdown
-        cityFilter.addEventListener(
-            "change",
-            function () {
-                showMuseums(this.value);
-            }
-        );
-
+      
     </script>
 
 </body>
