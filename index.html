@@ -47,6 +47,7 @@
                 height: 400px;
             }
         }
+
         #loading {
             position: fixed;
             top: 20px;
@@ -58,7 +59,7 @@
             border-radius: 8px;
             z-index: 9999;
             font-size: 18px;
-            }
+        }
     </style>
 </head>
 
@@ -69,13 +70,13 @@
         <p>Discover the countless museums scattered across the Netherlands.</p>
     </header>
 
+    <!-- Loading -->
+    <div id="loading">
+        Loading museums...
+    </div>
 
     <!-- Kaart -->
-<div id="loading">
-    Loading museums...
-</div>
-
-<div id="map"></div>
+    <div id="map"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -98,6 +99,7 @@
 
         // Museums opslaan
         var museums = [];
+
         // Overpass API query
         var query = `
         [out:json][timeout:25];
@@ -147,52 +149,52 @@
                 });
             });
 
-
             // Eerst alles tonen
             showMuseums();
-            
+
             // Loading verbergen
             document.getElementById("loading").style.display = "none";
         })
 
         .catch(err => {
             console.error("Fout bij ophalen data:", err);
+
+            document.getElementById("loading").innerText =
+                "Fout bij laden van museums.";
         });
 
         // Museums tonen
-// Museums tonen
-// Museums tonen
-function showMuseums() {
+        function showMuseums() {
 
-    markersLayer.clearLayers();
+            markersLayer.clearLayers();
 
-    museums.forEach(museum => {
+            museums.forEach(museum => {
 
-        var marker = L.marker([museum.lat, museum.lon])
-            .addTo(markersLayer);
+                var marker = L.marker([museum.lat, museum.lon])
+                    .addTo(markersLayer);
 
-        // Eerst loading tonen
-        marker.bindPopup("Loading...");
+                // Eerst loading tonen
+                marker.bindPopup("Loading...");
 
-        // Wanneer popup opent
-        marker.on("click", function () {
+                // Wanneer popup opent
+                marker.on("click", function () {
 
-            // Tijdelijke loading popup
-            marker.setPopupContent("Loading...");
+                    // Tijdelijke loading popup
+                    marker.setPopupContent("Loading...");
 
-            // Simuleer trage data
+                    // Simuleer trage data
+                    setTimeout(() => {
 
-                    marker.setPopupContent(`
-                        <b>${museum.name}</b>
-                    `);
-                `);
+                        marker.setPopupContent(`
+                            <b>${museum.name}</b>
+                        `);
 
-            }, 500);
+                    }, 500);
 
-        });
+                });
 
-    });
-}
+            });
+        }
 
     </script>
 
