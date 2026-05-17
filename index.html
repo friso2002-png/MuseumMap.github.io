@@ -41,8 +41,12 @@
         }
 
         /* Responsive voor mobiel */
-        @media (max-width: 850px) 
-            
+        @media (max-width: 850px) {
+            #map {
+                width: 95%;
+                height: 400px;
+            }
+        }
         }
     </style>
 </head>
@@ -120,15 +124,6 @@
                 var name =
                     tags.name || "Museum";
 
-                // Stad/gemeente bepalen
-                var city =
-                    tags["addr:city"] ||
-                    tags["addr:town"] ||
-                    tags["addr:village"] ||
-                    tags["is_in:city"] ||
-                    tags["addr:municipality"] ||
-                    "Onbekend";
-
                 // Museum opslaan
                 museums.push({
                     name: name,
@@ -169,23 +164,6 @@
             markersLayer.clearLayers();
 
             museums.forEach(museum => {
-
-                // Filter toepassen
-                if (
-                    selectedCity === "all" ||
-                    museum.city === selectedCity
-                ) {
-
-                    L.marker([museum.lat, museum.lon])
-
-                        .addTo(markersLayer)
-
-                        .bindPopup(`
-                            <b>${museum.name}</b><br>
-                            ${museum.city}
-                        `);
-                }
-            });
         }
 
       
