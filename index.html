@@ -170,11 +170,16 @@
                 var name =
                     tags.name || "Museum";
 
+                // Museumtype
+                var type =
+                    tags.museum || "default";
+
                 // Museum opslaan
                 museums.push({
                     name: name,
                     lat: lat,
-                    lon: lon
+                    lon: lon,
+                    type: type
                 });
             });
 
@@ -192,6 +197,79 @@
                 "Fout bij laden van museums.";
         });
 
+        // Kleur bepalen per museumtype
+        function getColor(type) {
+
+            switch(type) {
+
+                // Art
+                case "art":
+                case "gallery":
+                    return "purple";
+
+                // Transport
+                case "transport":
+                case "railway":
+                    return "black";
+
+                case "aviation":
+                case "aerospace":
+                    return "skyblue";
+
+                case "maritime":
+                    return "blue";
+
+                // Science
+                case "science":
+                    return "green";
+
+                case "technology":
+                    return "gray";
+
+                case "nature":
+                case "evolution":
+                case "palaeontology":
+                    return "darkgreen";
+
+                case "agriculture":
+                    return "olive";
+
+                // History
+                case "history":
+                case "living_history":
+                    return "brown";
+
+                case "military":
+                case "war":
+                    return "darkred";
+
+                case "archaeological":
+                    return "saddlebrown";
+
+                // Other
+                case "open_air":
+                    return "orange";
+
+                case "children":
+                    return "pink";
+
+                case "ethnography":
+                    return "gold";
+
+                case "person":
+                    return "red";
+
+                case "language":
+                    return "teal";
+
+                case "health":
+                    return "lightcoral";
+
+                default:
+                    return "cadetblue";
+            }
+        }
+
         // Museums tonen
         function showMuseums() {
 
@@ -199,8 +277,30 @@
 
             museums.forEach(museum => {
 
-                var marker = L.marker([museum.lat, museum.lon])
-                    .addTo(markersLayer);
+                // Kleur bepalen
+                var color = getColor(museum.type);
+
+                // Custom marker
+                var icon = L.divIcon({
+                    className: "",
+                    html: `
+                        <div style="
+                            background:${color};
+                            width:18px;
+                            height:18px;
+                            border-radius:50%;
+                            border:2px solid white;
+                            box-shadow:0 0 4px rgba(0,0,0,0.5);
+                        "></div>
+                    `,
+                    iconSize: [18, 18]
+                });
+
+                // Marker maken
+                var marker = L.marker(
+                    [museum.lat, museum.lon],
+                    { icon: icon }
+                ).addTo(markersLayer);
 
                 // Eerst loading tonen
                 marker.bindPopup(`
@@ -219,14 +319,21 @@
                     setTimeout(() => {
 
                         marker.setPopupContent(`
-                            <b>${museum.name}</b><br><br>
-                            
-                            <a 
-                                href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
-                                target="_blank"
-                            >
-                                Open in Google Maps
-                            </a>
+                            <div style="
+                                border-left:8px solid ${color};
+                                padding-left:10px;
+                            ">
+                                <b>${museum.name}</b><br><br>
+
+                                <b>Type:</b> ${museum.type}<br><br>
+
+                                <a 
+                                    href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
+                                    target="_blank"
+                                >
+                                    Open in Google Maps
+                                </a>
+                            </div>
                         `);
 
                     }, 500);
