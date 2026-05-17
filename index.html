@@ -133,43 +133,43 @@
         const museumColors = {
 
             // Art
-            art: "red",
-            gallery: "darkred",
+            art: "#e74c3c",
+            gallery: "#ff6b6b",
 
             // Transport
-            transport: "blue",
-            railway: "navy",
-            aviation: "skyblue",
-            aerospace: "deepskyblue",
-            maritime: "cadetblue",
+            transport: "#3498db",
+            railway: "#2980b9",
+            aviation: "#5dade2",
+            aerospace: "#85c1e9",
+            maritime: "#1f618d",
 
             // Science
-            science: "green",
-            apis_mellifera: "gold",
-            nature: "darkgreen",
-            technology: "limegreen",
-            agriculture: "olive",
-            palaeontology: "saddlebrown",
-            evolution: "forestgreen",
+            science: "#2ecc71",
+            apis_mellifera: "#f4d03f",
+            nature: "#27ae60",
+            technology: "#16a085",
+            agriculture: "#52be80",
+            palaeontology: "#7dcea0",
+            evolution: "#58d68d",
 
             // History
-            history: "brown",
-            living_history: "peru",
-            military: "darkslategray",
-            war: "black",
-            archaeological: "chocolate",
+            history: "#d35400",
+            living_history: "#e67e22",
+            military: "#922b21",
+            war: "#641e16",
+            archaeological: "#a04000",
 
             // Other
-            open_air: "orange",
-            local: "purple",
-            children: "pink",
-            ethnography: "mediumvioletred",
-            person: "teal",
-            language: "indigo",
-            health: "crimson",
+            open_air: "#8e44ad",
+            local: "#9b59b6",
+            children: "#f39c12",
+            ethnography: "#af7ac5",
+            person: "#c0392b",
+            language: "#7f8c8d",
+            health: "#48c9b0",
 
-            // Fallback
-            other: "gray"
+            // fallback
+            other: "#555555"
         };
 
         // Overpass API query
@@ -213,12 +213,26 @@
                 var name =
                     tags.name || "Museum";
 
-                // Museumtype uitlezen
-                var type = tags.museum || "other";
+                // Museum types ophalen
+                let museumTypes = [];
 
-                // Als type niet bestaat -> other
-                if (!museumColors[type]) {
-                    type = "other";
+                // museum=* kan meerdere waarden bevatten
+                if (tags.museum) {
+
+                    museumTypes = tags.museum
+                        .split(";")
+                        .map(t => t.trim().toLowerCase());
+
+                }
+
+                // Alleen geldige keywords behouden
+                museumTypes = museumTypes.filter(type =>
+                    museumColors[type]
+                );
+
+                // Geen match = other
+                if (museumTypes.length === 0) {
+                    museumTypes = ["other"];
                 }
 
                 // Museum opslaan
@@ -226,8 +240,9 @@
                     name: name,
                     lat: lat,
                     lon: lon,
-                    type: type
+                    types: museumTypes
                 });
+
             });
 
             // Eerst alles tonen
@@ -251,18 +266,8 @@
 
             museums.forEach(museum => {
 
-                // Gekleurde marker
-                var marker = L.circleMarker(
-                    [museum.lat, museum.lon],
-                    {
-                        radius: 8,
-                        fillColor: museumColors[museum.type],
-                        color: "#000",
-                        weight: 1,
-                        opacity: 1,
-                        fillOpacity: 0.8
-                    }
-                ).addTo(markersLayer);
+                var marker = L.marker([museum.lat, museum.lon])
+                    .addTo(markersLayer);
 
                 // Eerst loading tonen
                 marker.bindPopup(`
@@ -280,16 +285,76 @@
                     // Simuleer trage data
                     setTimeout(() => {
 
-                        marker.setPopupContent(`
-                            <b>${museum.name}</b><br>
-                            Type: ${museum.type}<br><br>
+                        // Kleuren verzamelen
+                        let colors = museum.types.map(
+                            type => museumColors[type]
+                        );
 
-                            <a 
-                                href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
-                                target="_blank"
-                            >
-                                Open in Google Maps
-                            </a>
+                        // Gradient maken
+                        let gradient = "";
+
+                        if (colors.length === 1) {
+
+                            gradient = colors[0];
+
+                        } else {
+
+                            const step = 100 / colors.length;
+
+                            gradient = `linear-gradient(
+                                90deg,
+                                ${
+                                    colors.map((color, index) => {
+
+                                        const start =
+                                            index * step;
+
+                                        const end =
+                                            (index + 1) * step;
+
+                                        return `
+                                            ${color}
+                                            ${start}%
+                                            ${end}%
+                                        `;
+
+                                    }).join(", ")
+                                }
+                            )`;
+                        }
+
+                        marker.setPopupContent(`
+
+                            <div style="
+                                background: ${gradient};
+                                padding: 12px;
+                                border-radius: 10px;
+                                color: white;
+                                min-width: 220px;
+                            ">
+
+                                <b>${museum.name}</b>
+
+                                <br><br>
+
+                                <b>Type:</b>
+                                ${museum.types.join(", ")}
+
+                                <br><br>
+
+                                <a 
+                                    href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
+                                    target="_blank"
+                                    style="
+                                        color: white;
+                                        font-weight: bold;
+                                        text-decoration: underline;
+                                    "
+                                >
+                                    Open in Google Maps
+                                </a>
+
+                            </div>
                         `);
 
                     }, 500);
