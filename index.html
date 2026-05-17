@@ -40,6 +40,7 @@
             border-radius: 10px;
         }
 
+        /* Filter balk */
         #filterContainer {
             width: 800px;
             margin: 0 auto;
@@ -74,6 +75,7 @@
             margin-left: 8px;
         }
 
+        /* Kleurblokjes legenda */
         .keywordColor {
             display: inline-block;
             width: 14px;
@@ -85,15 +87,15 @@
             vertical-align: middle;
         }
 
+        /* Responsive voor mobiel */
         @media (max-width: 850px) {
-
-            #map,
-            #filterContainer {
+            #map {
                 width: 95%;
+                height: 400px;
             }
 
-            #map {
-                height: 400px;
+            #filterContainer {
+                width: 95%;
             }
         }
 
@@ -108,8 +110,10 @@
             border-radius: 8px;
             z-index: 9999;
             font-size: 18px;
+            margin: 0 auto;
         }
 
+        /* Animated dots */
         .dots::after {
             content: "";
             animation: dots 1.5s steps(4, end) infinite;
@@ -143,20 +147,18 @@
 
     <header>
         <h1>MuseumMap Netherlands</h1>
-        <p>Discover museums across the Netherlands.</p>
+        <p>Discover the countless museums scattered across the Netherlands.</p>
     </header>
 
-    <!-- Filter -->
+    <!-- Filter balk -->
     <div id="filterContainer">
-
         <button id="filterToggle">
-            Museum types ▼
+            Museum types â–¼
         </button>
 
         <div id="filterPanel">
-            <!-- Dynamisch gevuld -->
+            <!-- Checkboxes worden automatisch toegevoegd -->
         </div>
-
     </div>
 
     <!-- Loading -->
@@ -164,265 +166,172 @@
         Loading museums<span class="dots"></span>
     </div>
 
-    <!-- Map -->
+    <!-- Kaart -->
     <div id="map"></div>
 
-    <!-- Leaflet -->
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
     <script>
 
-        // =========================
-        // MAP INITIALISEREN
-        // =========================
+        // Kaart initialiseren
+        var map = L.map('map').setView([52.370216, 4.895168], 7);
 
-        const map = L.map('map').setView([52.1326, 5.2913], 7);
-
+        // OpenStreetMap tiles
         L.tileLayer(
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {
-                attribution: '© OpenStreetMap contributors'
+                attribution: 'Â© OpenStreetMap contributors'
             }
         ).addTo(map);
 
-        // =========================
-        // DATA STRUCTUREN
-        // =========================
+        // LayerGroup voor markers
+        var markersLayer = L.layerGroup().addTo(map);
 
-        const markersLayer = L.layerGroup().addTo(map);
+        // Museums opslaan
+        var museums = [];
 
-        const museums = [];
+        // Actieve filters
+        let activeTypes = new Set();
 
-        const activeTypes = new Set();
-
-        // =========================
-        // KLEUREN
-        // =========================
-
+        // Kleuren per museumtype
         const museumColors = {
 
+            // Art
             art: "red",
             gallery: "darkred",
 
+            // Transport
             transport: "blue",
             railway: "navy",
             aviation: "skyblue",
+            aerospace: "deepskyblue",
             maritime: "teal",
 
+            // Science
             science: "green",
-            technology: "limegreen",
+            apis_mellifera: "goldenrod",
             nature: "darkgreen",
+            technology: "limegreen",
+            agriculture: "olive",
+            palaeontology: "saddlebrown",
+            evolution: "forestgreen",
 
+            // History
             history: "brown",
-            military: "black",
+            living_history: "peru",
+            military: "darkslategray",
+            war: "black",
+            archaeological: "chocolate",
 
-            children: "hotpink",
-
+            // Other
             open_air: "orange",
+            local: "gold",
+            children: "hotpink",
+            ethnography: "purple",
+            person: "mediumvioletred",
+            language: "indigo",
+            health: "crimson",
 
+            // Fallback
             other: "BlueViolet"
         };
 
-        // =========================
-        // TYPES NORMALISEREN
-        // =========================
+        // Overpass API query
+        var query = `
+        [out:json][timeout:25];
+        area["name"="Nederland"]->.searchArea;
+        (
+          node["tourism"="museum"](area.searchArea);
+          way["tourism"="museum"](area.searchArea);
+          relation["tourism"="museum"](area.searchArea);
+        );
+        out center tags;
+        `;
 
-        function normalizeType(type) {
+        // Data ophalen
+        fetch("https://overpass-api.de/api/interpreter", {
+            method: "POST",
+            body: query
+        })
 
-            if (!type) return "other";
-
-            type = type.toLowerCase();
-
-            if (
-                type.includes("kunst") ||
-                type.includes("art")
-            ) {
-                return "art";
-            }
-
-            if (
-                type.includes("spoor") ||
-                type.includes("rail")
-            ) {
-                return "railway";
-            }
-
-            if (
-                type.includes("maritiem") ||
-                type.includes("maritime")
-            ) {
-                return "maritime";
-            }
-
-            if (
-                type.includes("science") ||
-                type.includes("wetenschap")
-            ) {
-                return "science";
-            }
-
-            if (
-                type.includes("geschiedenis") ||
-                type.includes("history")
-            ) {
-                return "history";
-            }
-
-            if (
-                type.includes("oorlog") ||
-                type.includes("military")
-            ) {
-                return "military";
-            }
-
-            if (
-                type.includes("kind")
-            ) {
-                return "children";
-            }
-
-            if (
-                type.includes("openlucht")
-            ) {
-                return "open_air";
-            }
-
-            return "other";
-        }
-
-        // =========================
-        // DATA LADEN
-        // =========================
-
-        fetch("./data/museums.json")
-
-            .then(response => {
-
-                if (!response.ok) {
-                    throw new Error("JSON bestand niet gevonden");
-                }
-
-                return response.json();
-            })
+            .then(res => res.json())
 
             .then(data => {
 
-                console.log("JSON geladen:", data);
+                data.elements.forEach(el => {
 
-                data.forEach(museum => {
+                    var lat =
+                        el.lat ||
+                        (el.center && el.center.lat);
 
-                    // =========================
-                    // PAS DIT AAN OP JOUW JSON
-                    // =========================
-
-                    const name =
-                        museum.name ||
-                        museum.title ||
-                        "Museum";
-
-                    const lat =
-                        parseFloat(
-                            museum.lat ||
-                            museum.latitude
-                        );
-
-                    const lon =
-                        parseFloat(
-                            museum.lon ||
-                            museum.longitude
-                        );
-
-                    const rawType =
-                        museum.type ||
-                        museum.category ||
-                        "other";
+                    var lon =
+                        el.lon ||
+                        (el.center && el.center.lon);
 
                     // Skip zonder coordinaten
-                    if (
-                        isNaN(lat) ||
-                        isNaN(lon)
-                    ) {
-                        return;
+                    if (!lat || !lon) return;
+
+                    var tags = el.tags || {};
+
+                    // Museumnaam
+                    var name =
+                        tags.name || "Museum";
+
+                    // Museumtype bepalen
+                    let museumType = tags.museum || "other";
+
+                    // Alleen bekende types toestaan
+                    if (!museumColors[museumType]) {
+                        museumType = "other";
                     }
 
-                    // Type normaliseren
-                    let museumType =
-                        normalizeType(rawType);
-
+                    // Museum opslaan
                     museums.push({
-
                         name: name,
-
                         lat: lat,
-
                         lon: lon,
-
                         type: museumType,
-
                         color: museumColors[museumType]
                     });
                 });
 
-                console.log(
-                    "Aantal museums:",
-                    museums.length
-                );
-
+                // Filter panel maken
                 createFilterPanel();
 
+                // Eerst alles tonen
                 showMuseums();
 
-                document.getElementById("loading").style.display =
-                    "none";
+                // Loading verbergen
+                document.getElementById("loading").style.display = "none";
             })
 
             .catch(err => {
+                console.error("Fout bij ophalen data:", err);
 
-                console.error(err);
-
-                document.getElementById("loading").innerHTML =
-                    `
-                    Error loading museums.<br><br>
-                    Controleer:
-                    <br>
-                    - draait via Live Server
-                    <br>
-                    - data/museums.json bestaat
-                    <br>
-                    - JSON is geldig
-                    `;
+                document.getElementById("loading").innerText =
+                    "Fout bij laden van museums.";
             });
 
-        // =========================
-        // FILTER PANEL
-        // =========================
-
+        // Filter panel maken
         function createFilterPanel() {
 
-            const filterPanel =
-                document.getElementById("filterPanel");
+            const filterPanel = document.getElementById("filterPanel");
 
-            const museumTypes =
-                [...new Set(
-                    museums.map(m => m.type)
-                )].sort();
+            // Unieke museumtypes ophalen
+            const museumTypes = [...new Set(museums.map(m => m.type))].sort();
+
+            // Alles standaard aanvinken
+            museumTypes.forEach(type => activeTypes.add(type));
 
             museumTypes.forEach(type => {
 
-                activeTypes.add(type);
-
-                const wrapper =
-                    document.createElement("div");
-
+                const wrapper = document.createElement("div");
                 wrapper.className = "filterItem";
 
-                const checkbox =
-                    document.createElement("input");
-
+                const checkbox = document.createElement("input");
                 checkbox.type = "checkbox";
-
                 checkbox.checked = true;
-
                 checkbox.id = `filter-${type}`;
 
                 checkbox.addEventListener("change", () => {
@@ -436,75 +345,50 @@
                     showMuseums();
                 });
 
-                const colorBox =
-                    document.createElement("span");
-
+                const colorBox = document.createElement("span");
                 colorBox.className = "keywordColor";
+                colorBox.style.backgroundColor = museumColors[type];
 
-                colorBox.style.backgroundColor =
-                    museumColors[type];
-
-                const label =
-                    document.createElement("label");
-
+                const label = document.createElement("label");
                 label.htmlFor = checkbox.id;
-
-                label.innerText =
-                    type.replace(/_/g, " ");
+                label.innerText = type.replace(/_/g, " ");
 
                 wrapper.appendChild(checkbox);
-
                 wrapper.appendChild(colorBox);
-
                 wrapper.appendChild(label);
 
                 filterPanel.appendChild(wrapper);
             });
         }
 
-        // =========================
-        // FILTER TOGGLE
-        // =========================
-
-        const filterToggle =
-            document.getElementById("filterToggle");
-
-        const filterPanel =
-            document.getElementById("filterPanel");
+        // Uitklappen filter balk
+        const filterToggle = document.getElementById("filterToggle");
+        const filterPanel = document.getElementById("filterPanel");
 
         filterToggle.addEventListener("click", () => {
 
             if (filterPanel.style.display === "block") {
-
                 filterPanel.style.display = "none";
-
-                filterToggle.innerHTML =
-                    "Museum types ▼";
-
+                filterToggle.innerHTML = "Museum keywords â–¼";
             } else {
-
                 filterPanel.style.display = "block";
-
-                filterToggle.innerHTML =
-                    "Museum types ▲";
+                filterToggle.innerHTML = "Museum keywords â–²";
             }
         });
 
-        // =========================
-        // MUSEUMS TONEN
-        // =========================
-
+        // Museums tonen
         function showMuseums() {
 
             markersLayer.clearLayers();
 
             museums.forEach(museum => {
 
+                // Alleen tonen als checkbox actief is
                 if (!activeTypes.has(museum.type)) {
                     return;
                 }
 
-                const marker = L.circleMarker(
+                var marker = L.circleMarker(
                     [museum.lat, museum.lon],
                     {
                         radius: 8,
@@ -516,27 +400,27 @@
                     }
                 ).addTo(markersLayer);
 
+                // Eerst loading tonen
                 marker.bindPopup(`
                     Loading<span class="dots"></span>
                 `);
 
+                // Wanneer popup opent
                 marker.on("click", function () {
 
+                    // Tijdelijke loading popup
                     marker.setPopupContent(`
                         Loading<span class="dots"></span>
                     `);
 
+                    // Simuleer trage data
                     setTimeout(() => {
 
                         marker.setPopupContent(`
                             <b>${museum.name}</b><br>
+                            Type: ${museum.type.replace(/_/g, " ")}<br><br>
 
-                            Type:
-                            ${museum.type.replace(/_/g, " ")}
-
-                            <br><br>
-
-                            <a
+                            <a 
                                 href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
                                 target="_blank"
                             >
@@ -544,8 +428,10 @@
                             </a>
                         `);
 
-                    }, 300);
+                    }, 500);
+
                 });
+
             });
         }
 
