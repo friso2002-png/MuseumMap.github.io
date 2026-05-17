@@ -1,4 +1,8 @@
+# Volledige aangepaste HTML-code
 
+Gebaseerd op het originele bestand: fileciteturn0file0
+
+```html
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -76,6 +80,18 @@
             margin-left: 8px;
         }
 
+        /* Kleurblokjes legenda */
+        .keywordColor {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            margin-left: 8px;
+            margin-right: 6px;
+            border: 1px solid #000;
+            vertical-align: middle;
+        }
+
         /* Responsive voor mobiel */
         @media (max-width: 850px) {
             #map {
@@ -142,7 +158,7 @@
     <!-- Filter balk -->
     <div id="filterContainer">
         <button id="filterToggle">
-            Museum keywords â–¼
+            Museum keywords ▼
         </button>
 
         <div id="filterPanel">
@@ -170,7 +186,7 @@
         L.tileLayer(
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {
-                attribution: 'Â© OpenStreetMap contributors'
+                attribution: '© OpenStreetMap contributors'
             }
         ).addTo(map);
 
@@ -334,11 +350,16 @@
                     showMuseums();
                 });
 
+                const colorBox = document.createElement("span");
+                colorBox.className = "keywordColor";
+                colorBox.style.backgroundColor = museumColors[type];
+
                 const label = document.createElement("label");
                 label.htmlFor = checkbox.id;
-                label.innerText = type;
+                label.innerText = type.replace(/_/g, " ");
 
                 wrapper.appendChild(checkbox);
+                wrapper.appendChild(colorBox);
                 wrapper.appendChild(label);
 
                 filterPanel.appendChild(wrapper);
@@ -353,10 +374,10 @@
 
             if (filterPanel.style.display === "block") {
                 filterPanel.style.display = "none";
-                filterToggle.innerHTML = "Museum keywords â–¼";
+                filterToggle.innerHTML = "Museum keywords ▼";
             } else {
                 filterPanel.style.display = "block";
-                filterToggle.innerHTML = "Museum keywords â–²";
+                filterToggle.innerHTML = "Museum keywords ▲";
             }
         });
 
@@ -402,7 +423,7 @@
 
                         marker.setPopupContent(`
                             <b>${museum.name}</b><br>
-                            Type: ${museum.type}<br><br>
+                            Type: ${museum.type.replace(/_/g, " ")}<br><br>
 
                             <a 
                                 href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(museum.name)}"
