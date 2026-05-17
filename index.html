@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="nl">
 
@@ -8,7 +9,7 @@
     <title>MuseumMap Netherlands</title>
 
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 
     <style>
         body {
@@ -168,6 +169,13 @@
             language: "indigo",
             health: "crimson",
 
+            // Combinaties
+            "art;history": "darkorange",
+            "science;technology": "cyan",
+            "maritime;history": "darkblue",
+            "art;science": "magenta",
+            "history;military": "dimgray",
+
             // Fallback
             other: "gray"
         };
@@ -214,10 +222,26 @@
                     tags.name || "Museum";
 
                 // Museumtype bepalen
-                let museumType = tags.museum || "other";
+                let museumTag = (tags.museum || "other")
+                    .toLowerCase()
+                    .split(";")
+                    .map(type => type.trim())
+                    .sort()
+                    .join(";");
 
-                // Alleen bekende types toestaan
+                let museumType = museumTag;
+
+                // Bestaat combinatie niet?
                 if (!museumColors[museumType]) {
+
+                    // Dan eerste bekende keyword gebruiken
+                    let splitTypes = museumTag.split(";");
+
+                    museumType = splitTypes.find(type => museumColors[type]);
+                }
+
+                // Nog steeds niets?
+                if (!museumType || !museumColors[museumType]) {
                     museumType = "other";
                 }
 
@@ -226,7 +250,7 @@
                     name: name,
                     lat: lat,
                     lon: lon,
-                    type: museumType,
+                    type: museumTag,
                     color: museumColors[museumType]
                 });
             });
@@ -302,4 +326,6 @@
     </script>
 
 </body>
+
 </html>
+```
