@@ -167,6 +167,11 @@
     <!-- Leaflet -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
+    <!-- GOOGLE PLACES API -->
+    <script async
+        src="https://maps.googleapis.com/maps/api/js?key=JOUW_API_KEY&libraries=places">
+    </script>
+
     <script>
 
         // MAP
@@ -222,7 +227,7 @@
             other: "BlueViolet"
         };
 
-        // SLIMME CATEGORIEËN
+        // CATEGORIEËN
         const categories = {
 
             art: [
@@ -324,6 +329,53 @@ area["ISO3166-1"="NL"][admin_level=2]->.searchArea;
 out center;
 `;
 
+        // GOOGLE RATING OPHALEN
+        function fetchGoogleRating(museum) {
+
+            return new Promise((resolve) => {
+
+                if (!window.google || !google.maps || !google.maps.places) {
+
+                    resolve(null);
+                    return;
+                }
+
+                const service = new google.maps.places.PlacesService(
+                    document.createElement("div")
+                );
+
+                const request = {
+                    query: museum.name,
+                    fields: [
+                        "name",
+                        "rating",
+                        "user_ratings_total"
+                    ]
+                };
+
+                service.findPlaceFromQuery(request, (results, status) => {
+
+                    if (
+                        status === google.maps.places.PlacesServiceStatus.OK &&
+                        results &&
+                        results.length > 0
+                    ) {
+
+                        const place = results[0];
+
+                        resolve({
+                            rating: place.rating,
+                            total: place.user_ratings_total
+                        });
+                    }
+
+                    else {
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
         // FETCH
         fetch(
             "https://overpass-api.de/api/interpreter",
@@ -346,11 +398,8 @@ out center;
 
             .then(data => {
 
-                console.log("OVERPASS DATA:", data);
-
                 data.elements.forEach(el => {
 
-                    // LAT/LON
                     const lat =
                         el.lat ||
                         (el.center && el.center.lat);
@@ -359,17 +408,13 @@ out center;
                         el.lon ||
                         (el.center && el.center.lon);
 
-                    // SKIP ZONDER COORDS
                     if (!lat || !lon) return;
 
-                    // TAGS
                     const tags = el.tags || {};
 
-                    // NAAM
                     const name =
                         tags.name || "Museum";
 
-                    // VEILIGE TEKST
                     const text = [
 
                         tags.name,
@@ -385,10 +430,8 @@ out center;
                         .join(" ")
                         .toLowerCase();
 
-                    // DEFAULT
                     let museumType = "other";
 
-                    // SLIMME CLASSIFICATIE
                     for (
                         const [type, keywords]
                         of Object.entries(categories)
@@ -407,7 +450,6 @@ out center;
                         }
                     }
 
-                    // FALLBACK OP OSM TAG
                     if (
 
                         museumType === "other" &&
@@ -419,7 +461,6 @@ out center;
                         museumType = tags.museum;
                     }
 
-                    // OPSLAAN
                     museums.push({
 
                         name,
@@ -435,13 +476,10 @@ out center;
 
                 });
 
-                // FILTERS
                 createFilterPanel();
 
-                // MARKERS
                 showMuseums();
 
-                // LOADING WEG
                 document.getElementById(
                     "loading"
                 ).style.display = "none";
@@ -475,7 +513,6 @@ out center;
                     museums.map(m => m.type)
                 )].sort();
 
-            // ALLES AAN
             museumTypes.forEach(type =>
                 activeTypes.add(type)
             );
@@ -511,7 +548,6 @@ out center;
                     }
                 );
 
-                // KLEUR
                 const colorBox =
                     document.createElement("span");
 
@@ -521,7 +557,6 @@ out center;
                 colorBox.style.backgroundColor =
                     museumColors[type];
 
-                // LABEL
                 const label =
                     document.createElement("label");
 
@@ -530,7 +565,6 @@ out center;
                 label.innerText =
                     type.replace(/_/g, " ");
 
-                // APPEND
                 wrapper.appendChild(checkbox);
                 wrapper.appendChild(colorBox);
                 wrapper.appendChild(label);
@@ -585,14 +619,12 @@ out center;
 
             museums.forEach(museum => {
 
-                // FILTER
                 if (
                     !activeTypes.has(
                         museum.type
                     )
                 ) return;
 
-                // MARKER
                 const marker =
                     L.circleMarker(
 
@@ -615,26 +647,51 @@ out center;
 
                     ).addTo(markersLayer);
 
-                // LOADING POPUP
                 marker.bindPopup(`
 Loading<span class="dots"></span>
 `);
 
                 // CLICK
-                marker.on("click", () => {
+                marker.on("click", async () => {
 
                     marker.setPopupContent(`
 Loading<span class="dots"></span>
 `);
 
-                    setTimeout(() => {
+                    const googleData =
+                        await fetchGoogleRating(museum);
 
-                        marker.setPopupContent(`
+                    let ratingHTML =
+                        "Geen rating gevonden";
+
+                    if (
+                        googleData &&
+                        googleData.rating
+                    ) {
+
+                        const stars = "⭐".repeat(
+                            Math.round(
+                                googleData.rating
+                            )
+                        );
+
+                        ratingHTML = `
+${stars}<br>
+<b>${googleData.rating}</b> / 5
+(${googleData.total} reviews)
+`;
+                    }
+
+                    marker.setPopupContent(`
 
 <b>${museum.name}</b><br>
 
 Type:
 ${museum.type.replace(/_/g, " ")}
+
+<br><br>
+
+${ratingHTML}
 
 <br><br>
 
@@ -646,8 +703,6 @@ Open in Google Maps
 </a>
 
 `);
-
-                    }, 300);
 
                 });
 
