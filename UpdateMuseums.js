@@ -1,6 +1,6 @@
 const axios = require("axios");
 const fs = require("fs");
-
+const GOOGLE_API_KEY = "JOUW_API_KEY";
 // Overpass query
 const query = `
 [out:json][timeout:60];
