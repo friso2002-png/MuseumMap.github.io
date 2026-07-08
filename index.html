@@ -377,122 +377,23 @@ out center;
         }
 
         // FETCH
-        fetch(
-            "https://overpass-api.de/api/interpreter",
-            {
-                method: "POST",
-                body: query
-            }
-        )
+fetch("museums.json")
 
-            .then(res => {
+.then(res=>res.json())
 
-                if (!res.ok) {
-                    throw new Error(
-                        `HTTP ERROR ${res.status}`
-                    );
-                }
+.then(data=>{
 
-                return res.json();
-            })
+    museums = data;
 
-            .then(data => {
+    createFilterPanel();
 
-                data.elements.forEach(el => {
+    showMuseums();
 
-                    const lat =
-                        el.lat ||
-                        (el.center && el.center.lat);
+    document.getElementById("loading").style.display="none";
 
-                    const lon =
-                        el.lon ||
-                        (el.center && el.center.lon);
+})
 
-                    if (!lat || !lon) return;
-
-                    const tags = el.tags || {};
-
-                    const name =
-                        tags.name || "Museum";
-
-                    const text = [
-
-                        tags.name,
-                        tags.museum,
-                        tags.subject,
-                        tags.theme,
-                        tags.collection,
-                        tags.description
-
-                    ]
-
-                        .filter(Boolean)
-                        .join(" ")
-                        .toLowerCase();
-
-                    let museumType = "other";
-
-                    for (
-                        const [type, keywords]
-                        of Object.entries(categories)
-                    ) {
-
-                        if (
-
-                            keywords.some(word =>
-                                text.includes(word)
-                            )
-
-                        ) {
-
-                            museumType = type;
-                            break;
-                        }
-                    }
-
-                    if (
-
-                        museumType === "other" &&
-                        tags.museum &&
-                        museumColors[tags.museum]
-
-                    ) {
-
-                        museumType = tags.museum;
-                    }
-
-                    museums.push({
-
-                        name,
-                        lat,
-                        lon,
-
-                        type: museumType,
-
-                        color:
-                            museumColors[museumType]
-                            || museumColors.other
-                    });
-
-                });
-
-                createFilterPanel();
-
-                showMuseums();
-
-                document.getElementById(
-                    "loading"
-                ).style.display = "none";
-
-            })
-
-            .catch(err => {
-
-                console.error(
-                    "OVERPASS ERROR:",
-                    err
-                );
-
+.catch(console.error);
                 document.getElementById(
                     "loading"
                 ).innerText =
