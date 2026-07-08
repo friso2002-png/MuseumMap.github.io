@@ -9,6 +9,11 @@
     <!-- Leaflet -->
     <link rel="stylesheet"
         href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+    <link rel="stylesheet"
+href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
 
     <style>
         body {
@@ -186,7 +191,9 @@
         ).addTo(map);
 
         // MARKER LAYER
-        const markersLayer = L.layerGroup().addTo(map);
+        const markersLayer = L.markerClusterGroup();
+        
+        map.addLayer(markersLayer);
 
         // DATA
         let museums = [];
