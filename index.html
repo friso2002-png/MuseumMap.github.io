@@ -181,7 +181,7 @@
         L.tileLayer(
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {
-                attribution: 'Â© OpenStreetMap contributors'
+                attribution: 'Ã‚Â© OpenStreetMap contributors'
             }
         ).addTo(map);
 
@@ -227,7 +227,7 @@
             other: "BlueViolet"
         };
 
-        // CATEGORIEÃ‹N
+        // CATEGORIEÃƒâ€¹N
         const categories = {
 
             art: [
@@ -377,21 +377,122 @@ out center;
         }
 
         // FETCH
-fetch("museums.json")
-.then(res => res.json())
-.then(data => {
+        fetch(
+            "https://overpass-api.de/api/interpreter",
+            {
+                method: "POST",
+                body: query
+            }
+        )
 
-    museums = data;
+            .then(res => {
 
-    createFilterPanel();
+                if (!res.ok) {
+                    throw new Error(
+                        `HTTP ERROR ${res.status}`
+                    );
+                }
 
-    showMuseums();
+                return res.json();
+            })
 
-    document.getElementById("loading").style.display = "none";
+            .then(data => {
 
-});
+                data.elements.forEach(el => {
 
-.catch(console.error);
+                    const lat =
+                        el.lat ||
+                        (el.center && el.center.lat);
+
+                    const lon =
+                        el.lon ||
+                        (el.center && el.center.lon);
+
+                    if (!lat || !lon) return;
+
+                    const tags = el.tags || {};
+
+                    const name =
+                        tags.name || "Museum";
+
+                    const text = [
+
+                        tags.name,
+                        tags.museum,
+                        tags.subject,
+                        tags.theme,
+                        tags.collection,
+                        tags.description
+
+                    ]
+
+                        .filter(Boolean)
+                        .join(" ")
+                        .toLowerCase();
+
+                    let museumType = "other";
+
+                    for (
+                        const [type, keywords]
+                        of Object.entries(categories)
+                    ) {
+
+                        if (
+
+                            keywords.some(word =>
+                                text.includes(word)
+                            )
+
+                        ) {
+
+                            museumType = type;
+                            break;
+                        }
+                    }
+
+                    if (
+
+                        museumType === "other" &&
+                        tags.museum &&
+                        museumColors[tags.museum]
+
+                    ) {
+
+                        museumType = tags.museum;
+                    }
+
+                    museums.push({
+
+                        name,
+                        lat,
+                        lon,
+
+                        type: museumType,
+
+                        color:
+                            museumColors[museumType]
+                            || museumColors.other
+                    });
+
+                });
+
+                createFilterPanel();
+
+                showMuseums();
+
+                document.getElementById(
+                    "loading"
+                ).style.display = "none";
+
+            })
+
+            .catch(err => {
+
+                console.error(
+                    "OVERPASS ERROR:",
+                    err
+                );
+
                 document.getElementById(
                     "loading"
                 ).innerText =
@@ -566,7 +667,7 @@ Loading<span class="dots"></span>
                         googleData.rating
                     ) {
 
-                        const stars = "â­".repeat(
+                        const stars = "Ã¢Â­Â".repeat(
                             Math.round(
                                 googleData.rating
                             )
