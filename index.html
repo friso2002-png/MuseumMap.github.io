@@ -329,6 +329,53 @@ area["ISO3166-1"="NL"][admin_level=2]->.searchArea;
 out center;
 `;
 
+        // GOOGLE RATING OPHALEN
+        function fetchGoogleRating(museum) {
+
+            return new Promise((resolve) => {
+
+                if (!window.google || !google.maps || !google.maps.places) {
+
+                    resolve(null);
+                    return;
+                }
+
+                const service = new google.maps.places.PlacesService(
+                    document.createElement("div")
+                );
+
+                const request = {
+                    query: museum.name,
+                    fields: [
+                        "name",
+                        "rating",
+                        "user_ratings_total"
+                    ]
+                };
+
+                service.findPlaceFromQuery(request, (results, status) => {
+
+                    if (
+                        status === google.maps.places.PlacesServiceStatus.OK &&
+                        results &&
+                        results.length > 0
+                    ) {
+
+                        const place = results[0];
+
+                        resolve({
+                            rating: place.rating,
+                            total: place.user_ratings_total
+                        });
+                    }
+
+                    else {
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
         // FETCH
         fetch(
             "https://overpass-api.de/api/interpreter",
@@ -609,6 +656,29 @@ Loading<span class="dots"></span>
 Loading<span class="dots"></span>
 `);
 
+                    const googleData =
+                        await fetchGoogleRating(museum);
+
+                    let ratingHTML =
+                        "Geen rating gevonden";
+
+                    if (
+                        googleData &&
+                        googleData.rating
+                    ) {
+
+                        const stars = "Ã¢Â­Â".repeat(
+                            Math.round(
+                                googleData.rating
+                            )
+                        );
+
+                        ratingHTML = `
+${stars}<br>
+<b>${googleData.rating}</b> / 5
+(${googleData.total} reviews)
+`;
+                    }
 
                     marker.setPopupContent(`
 
