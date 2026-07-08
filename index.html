@@ -324,30 +324,6 @@ area["ISO3166-1"="NL"][admin_level=2]->.searchArea;
 
 out center;
 `;
-
-                service.findPlaceFromQuery(request, (results, status) => {
-
-                    if (
-                        status === google.maps.places.PlacesServiceStatus.OK &&
-                        results &&
-                        results.length > 0
-                    ) {
-
-                        const place = results[0];
-
-                        resolve({
-                            rating: place.rating,
-                            total: place.user_ratings_total
-                        });
-                    }
-
-                    else {
-                        resolve(null);
-                    }
-                });
-            });
-        }
-
         // FETCH
         fetch(
             "https://overpass-api.de/api/interpreter",
