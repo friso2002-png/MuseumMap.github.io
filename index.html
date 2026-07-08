@@ -9,11 +9,6 @@
     <!-- Leaflet -->
     <link rel="stylesheet"
         href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
-    <link rel="stylesheet"
-href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.css">
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
 
     <style>
         body {
@@ -154,7 +149,7 @@ href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
     <div id="filterContainer">
 
         <button id="filterToggle">
-            Museum types ▼
+            Museum types â–¼
         </button>
 
         <div id="filterPanel"></div>
@@ -186,14 +181,12 @@ href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
         L.tileLayer(
             'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             {
-                attribution: '© OpenStreetMap contributors'
+                attribution: 'Â© OpenStreetMap contributors'
             }
         ).addTo(map);
 
         // MARKER LAYER
-        const markersLayer = L.markerClusterGroup();
-        
-        map.addLayer(markersLayer);
+        const markersLayer = L.layerGroup().addTo(map);
 
         // DATA
         let museums = [];
@@ -234,7 +227,7 @@ href="https://unpkg.com/leaflet.markercluster/dist/MarkerCluster.Default.css">
             other: "BlueViolet"
         };
 
-        // CATEGORIEËN
+        // CATEGORIEÃ‹N
         const categories = {
 
             art: [
@@ -603,7 +596,7 @@ out center;
                         "none";
 
                     filterToggle.innerHTML =
-                        "Museum types ▼";
+                        "Museum types â–¼";
                 }
 
                 else {
@@ -612,7 +605,7 @@ out center;
                         "block";
 
                     filterToggle.innerHTML =
-                        "Museum types ▲";
+                        "Museum types â–²";
                 }
             }
         );
@@ -674,7 +667,7 @@ Loading<span class="dots"></span>
                         googleData.rating
                     ) {
 
-                        const stars = "⭐".repeat(
+                        const stars = "â­".repeat(
                             Math.round(
                                 googleData.rating
                             )
