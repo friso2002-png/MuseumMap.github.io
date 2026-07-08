@@ -378,10 +378,8 @@ out center;
 
         // FETCH
 fetch("museums.json")
-
-.then(res=>res.json())
-
-.then(data=>{
+.then(res => res.json())
+.then(data => {
 
     museums = data;
 
@@ -389,9 +387,9 @@ fetch("museums.json")
 
     showMuseums();
 
-    document.getElementById("loading").style.display="none";
+    document.getElementById("loading").style.display = "none";
 
-})
+});
 
 .catch(console.error);
                 document.getElementById(
