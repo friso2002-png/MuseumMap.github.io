@@ -223,7 +223,7 @@
             other: "BlueViolet"
         };
 
-        // CATEGORIEÃƒâ€¹N
+        // CATEGORIËN
         const categories = {
 
             art: [
@@ -603,30 +603,6 @@ Loading<span class="dots"></span>
                     marker.setPopupContent(`
 Loading<span class="dots"></span>
 `);
-
-                    const googleData =
-                        await fetchGoogleRating(museum);
-
-                    let ratingHTML =
-                        "Geen rating gevonden";
-
-                    if (
-                        googleData &&
-                        googleData.rating
-                    ) {
-
-                        const stars = "Ã¢Â­Â".repeat(
-                            Math.round(
-                                googleData.rating
-                            )
-                        );
-
-                        ratingHTML = `
-${stars}<br>
-<b>${googleData.rating}</b> / 5
-(${googleData.total} reviews)
-`;
-                    }
 
                     marker.setPopupContent(`
 
