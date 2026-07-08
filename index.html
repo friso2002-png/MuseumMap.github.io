@@ -325,30 +325,6 @@ area["ISO3166-1"="NL"][admin_level=2]->.searchArea;
 out center;
 `;
 
-        // GOOGLE RATING OPHALEN
-        function fetchGoogleRating(museum) {
-
-            return new Promise((resolve) => {
-
-                if (!window.google || !google.maps || !google.maps.places) {
-
-                    resolve(null);
-                    return;
-                }
-
-                const service = new google.maps.places.PlacesService(
-                    document.createElement("div")
-                );
-
-                const request = {
-                    query: museum.name,
-                    fields: [
-                        "name",
-                        "rating",
-                        "user_ratings_total"
-                    ]
-                };
-
                 service.findPlaceFromQuery(request, (results, status) => {
 
                     if (
