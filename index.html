@@ -512,7 +512,9 @@ out center;
                 [...new Set(
                     museums.map(m => m.type)
                 )].sort();
-
+            museumTypes.forEach(type =>
+                        activeTypes.add(type)
+                    );
             museumTypes.forEach(type => {
 
                 const wrapper =
@@ -525,7 +527,7 @@ out center;
                     document.createElement("input");
 
                 checkbox.type = "checkbox";
-                checkbox.checked = false;
+                checkbox.checked = true;
                 checkbox.id = `filter-${type}`;
 
                 checkbox.addEventListener(
